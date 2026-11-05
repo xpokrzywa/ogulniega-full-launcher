@@ -1,0 +1,15 @@
+node_modules/
+target/
+android/
+gen/
+build/
+.gradle/
+*.apk
+*.aab
+*.keystore
+*.jks
+.gradle/
+local.properties
+.DS_Store
+docs/
+banner.png

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="pl">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+	<meta name="theme-color" content="#0b0f0c" />
+	<meta name="description" content="Nieoficjalna aplikacja mobilna dla klienta Ogulniega Minecraft: wersje klienta, lista modów, wyszukiwarka Modrinth." />
+	<title>Ogulniega Full Launcher</title>
+	<link rel="manifest" href="./manifest.webmanifest" />
+	<link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
+	<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+	<link rel="stylesheet" href="./style.css" />
+	<link rel="preload" href="./fonts/PressStart2P-Regular.ttf" as="font" type="font/ttf" crossorigin />
+</head>
+<body>
+	<header class="topbar">
+		<div class="brand">
+			<img src="./icons/icon-192.png" alt="" width="36" height="36" />
+			<div>
+				<h1>Ogulniega <span>Full Launcher</span></h1>
+				<p id="version-line">wersja aplikacji 1.0.0</p>
+			</div>
+		</div>
+		<button id="install-btn" class="ghost" hidden>Zainstaluj</button>
+	</header>
+
+	<main>
+		<section id="tab-start" class="tab active">
+			<div class="hero">
+				<img class="hero-block" src="./icons/icon-192.png" alt="" width="72" height="72" />
+				<h2>Klient Ogulniega na telefonie</h2>
+				<p>Przeglądaj wersje klienta, mody i serwery bezpośrednio ze źródła projektu.
+					Aplikacja niczego nie uruchamia — do grania w Minecraft Java na Androidzie
+					potrzebujesz launchera z JVM (patrz zakładka Pomoc).</p>
+				<div class="actions">
+					<a class="btn primary" href="https://ogulniega.com/en" target="_blank" rel="noopener">Strona projektu</a>
+					<a class="btn" href="https://ogulniega.com/files/launcher.json" target="_blank" rel="noopener">launcher.json</a>
+				</div>
+			</div>
+
+			<div class="grid">
+				<article class="card">
+					<h3>Wybrana wersja klienta</h3>
+					<p class="big" id="selected-version">—</p>
+					<p class="muted" id="selected-details">wczytywanie danych…</p>
+				</article>
+				<article class="card">
+					<h3>Wersja launchera (PC)</h3>
+					<p class="big" id="launcher-latest">—</p>
+					<p class="muted">pobieranie: Windows / Linux (flatpak)</p>
+				</article>
+				<article class="card">
+					<h3>Dostępnych wersji</h3>
+					<p class="big" id="versions-count">—</p>
+					<p class="muted" id="versions-range">—</p>
+				</article>
+				<article class="card">
+					<h3>Źródło danych</h3>
+					<p class="muted small">cdn.jsdelivr.net/gh/xMelonekMaX/ogulniega-distribution</p>
+					<p class="muted small" id="last-updated">—</p>
+				</article>
+			</div>
+
+			<article class="card">
+				<h3>Informacje z launcher.json</h3>
+				<ul class="notices" id="notices"><li class="muted">brak</li></ul>
+			</article>
+		</section>
+
+		<section id="tab-versions" class="tab">
+			<div class="toolbar">
+				<input id="version-filter" type="search" placeholder="Filtruj: 1.21, sodium, vulkan…" autocomplete="off" />
+			</div>
+			<div id="versions-list" class="list"><p class="muted">wczytywanie…</p></div>
+		</section>
+
+		<section id="tab-mods" class="tab">
+			<div class="toolbar">
+				<input id="mod-query" type="search" placeholder="Szukaj moda na Modrinth…" autocomplete="off" />
+				<select id="mod-version" aria-label="Wersja Minecrafta"><option value="">dowolna wersja</option></select>
+			</div>
+			<div id="mods-list" class="list">
+				<p class="muted">Wpisz nazwę moda, np. „sodium”, „lithium”, „journeymap”.</p>
+			</div>
+		</section>
+
+		<section id="tab-help" class="tab">
+			<article class="card">
+				<h3>Jak zainstalować tę aplikację</h3>
+				<ol>
+					<li><b>Jako PWA (najprościej):</b> otwórz adres projektu na GitHub Pages w Chrome,
+						menu ⋮ → „Dodaj do ekranu głównego”. Aplikacja działa też offline.</li>
+					<li><b>Jako APK:</b> w repozytorium na GitHubie wejdź w zakładkę <i>Actions</i>,
+						wybierz workflow <i>Android APK</i>, pobierz artefakt <code>ogulniega-mobile-debug-apk</code>,
+						rozpakuj i zainstaluj plik <code>.apk</code> (trzeba zezwolić na instalację z nieznanych źródeł).</li>
+					<li><b>Jako APK ze Rustem (backend pobierania w Rust):</b> w Actions wybierz
+						workflow <i>Rust / Tauri</i>, artefakt <code>ogulniega-mobile-rust-apk</code>,
+						rozpakuj i zainstaluj <code>app-debug.apk</code> z folderu <code>gen/android</code>.</li>
+				</ol>
+			</article>
+			<article class="card">
+				<h3>Jak grać w Minecraft Java na Androidzie</h3>
+				<p>Ta aplikacja <b>nie uruchamia gry</b> — jest katalogiem wersji i modów. Minecraft Java
+					wymaga JVM, więc na Androidzie potrzebny jest launcher, który ją dostarcza, np.
+					PojavLauncher, TurtleLauncher albo MojoLauncher.</p>
+				<ul>
+					<li>Zainstaluj taki launcher i zaloguj się własnym kontem Microsoft (konto musi posiadać grę).</li>
+					<li>Wersje Minecrafta i mody pobieraj z tej aplikacji lub z Modrinth.</li>
+					<li>Klient Ogulniega jest przeznaczony na PC — na telefonie uruchomisz raczej czysty Fabric + mody.</li>
+				</ul>
+			</article>
+			<article class="card">
+				<h3>Wersja aplikacji</h3>
+				<p id="backend-line" class="muted small">Sprawdzam tryb pracy…</p>
+				<p id="version-line" class="muted small">wersja aplikacji 1.1.0</p>
+			</article>
+			<article class="card">
+				<h3>Ważne</h3>
+				<p class="muted">To nieoficjalna aplikacja społecznościowa. Nie jest powiązana z autorem
+					klienta Ogulniega ani z Mojang/Microsoft. Nie zawiera plików gry — tylko odczytuje
+					publiczne pliki JSON projektu. Znak „Minecraft” należy do Mojang Studios.</p>
+				<p id="repo-links" class="muted small"></p>
+				<p class="muted small">Krój nagłówków: Press Start 2P (SIL Open Font License 1.1, Cody „CodeMan38” Boisclair).
+					Ikony i układ: własne, inspirowane stylem blokowym — bez assetów klienta Ogulniega.</p>
+			</article>
+		</section>
+	</main>
+
+	<nav class="tabbar" aria-label="Nawigacja">
+		<button class="tabbtn active" data-tab="start"><span>◇</span>Start</button>
+		<button class="tabbtn" data-tab="versions"><span>▤</span>Wersje</button>
+		<button class="tabbtn" data-tab="mods"><span>✦</span>Mody</button>
+		<button class="tabbtn" data-tab="help"><span>?</span>Pomoc</button>
+	</nav>
+
+	<div id="sheet" class="sheet" hidden>
+		<div class="sheet-panel" role="dialog" aria-modal="true">
+			<button id="sheet-close" class="sheet-close" aria-label="Zamknij">×</button>
+			<div id="sheet-body"></div>
+		</div>
+	</div>
+
+	<div id="toast" class="toast" hidden></div>
+	<script src="./app.js"></script>
+</body>
+</html>

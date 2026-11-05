@@ -1,0 +1,117 @@
+name: Rust / Tauri
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src-tauri/**'
+      - 'www/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/tauri.yml'
+  pull_request:
+    paths:
+      - 'src-tauri/**'
+      - 'www/**'
+      - '.github/workflows/tauri.yml'
+  workflow_dispatch:
+
+jobs:
+  desktop:
+    name: Desktop (Linux, deb + AppImage)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pakiety systemowe
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev \
+            patchelf libayatana-appindicator3-dev
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Zależności JS
+        run: npm install
+
+      - name: Testy jednostkowe Rust
+        working-directory: src-tauri
+        run: cargo test --all-features
+
+      - name: Budowa (deb + AppImage)
+        run: npx tauri build --bundles deb,appimage
+
+      - name: Artefakt
+        uses: actions/upload-artifact@v4
+        with:
+          name: ogulniega-mobile-linux
+          path: |
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/appimage/*.AppImage
+          if-no-files-found: error
+
+  android:
+    name: Android (APK, Rust)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 13114758
+          accept-android-sdk-licenses: true
+          packages: ""
+
+      - name: Komponenty SDK
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "build-tools;34.0.0" "ndk;27.0.12077973"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Zależności JS
+        run: npm install
+
+      - name: Inicjalizacja projektu Android
+        run: npx tauri android init --ci
+
+      - name: Budowa APK (debug, podpis debug)
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
+        run: npx tauri android build --apk --debug
+
+      - name: Artefakt
+        uses: actions/upload-artifact@v4
+        with:
+          name: ogulniega-mobile-rust-apk
+          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+
+      - name: APK do release (tylko tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: src-tauri/gen/android/app/build/outputs/apk/**/*.apk

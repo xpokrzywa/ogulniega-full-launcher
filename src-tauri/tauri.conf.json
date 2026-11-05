@@ -1,0 +1,37 @@
+{
+	"$schema": "https://schema.tauri.app/config/2",
+	"productName": "Ogulniega Full Launcher",
+	"version": "1.0.0",
+	"identifier": "com.xpokrzywa.ogulniega.fulllauncher",
+	"build": {
+		"frontendDist": "../www"
+	},
+	"app": {
+		"windows": [
+			{
+				"title": "Ogulniega Full Launcher",
+				"width": 430,
+				"height": 880,
+				"minWidth": 360,
+				"minHeight": 560,
+				"resizable": true
+			}
+		],
+		"security": {
+			"csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://cdn.jsdelivr.net https://api.modrinth.com https://ogulniega.com https://github.com; font-src 'self'"
+		}
+	},
+	"bundle": {
+		"active": true,
+		"targets": ["deb", "appimage"],
+		"icon": [
+			"icons/32x32.png",
+			"icons/128x128.png",
+			"icons/128x128@2x.png",
+			"icons/icon.png"
+		],
+		"android": {
+			"minSdkVersion": 24
+		}
+	}
+}
