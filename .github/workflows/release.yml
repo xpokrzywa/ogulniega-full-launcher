@@ -87,10 +87,10 @@ jobs:
       - name: Inicjalizacja projektu Android
         run: npx tauri android init --ci
 
-      - name: Budowa APK (debug)
+      - name: Budowa APK (release)
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
-        run: npx tauri android build --apk --debug
+        run: npx tauri android build --apk --release
 
       - name: Artefakt APK
         uses: actions/upload-artifact@v4
