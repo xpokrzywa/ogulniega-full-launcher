@@ -351,6 +351,19 @@ function init() {
 
 	loadData();
 
+	const btnPlay = $('#btn-play');
+	if (btnPlay) {
+		btnPlay.addEventListener('click', () => {
+			const selected = state.launcher && state.launcher.selected_version;
+			if (selected) {
+				openVersion(selected);
+			} else {
+				showTab('versions');
+				toast('Wybierz wersję z listy poniżej.');
+			}
+		});
+	}
+
 	window.addEventListener('online', loadData);
 }
 
