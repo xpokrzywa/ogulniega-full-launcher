@@ -15,7 +15,7 @@ use crate::error::AppError;
 /// Limit odpowiedzi JSON — manifesty są małe, chroni przed zalaniem pamięci.
 const MAX_JSON_BYTES: usize = 8 * 1024 * 1024;
 
-const ALLOWED_HOSTS: &[&str] = &[
+pub const ALLOWED_HOSTS: &[&str] = &[
     "cdn.jsdelivr.net",
     "ogulniega.com",
     "launchermeta.mojang.com",
@@ -42,14 +42,23 @@ pub struct AppState {
     pub data_dir: PathBuf,
 }
 
+/// Czy host jest na allowliście (bez uwzględnienia portu/prefiksu — exact match).
+pub fn is_allowed_host(host: &str) -> bool {
+    ALLOWED_HOSTS
+        .iter()
+        .any(|allowed| host.eq_ignore_ascii_case(allowed))
+}
+
 /// Allowlista hostów. Zwraca sparsowany URL, żeby wołający nie parsował drugi raz.
 pub fn check_url(url: &str) -> Result<String, AppError> {
     let parsed = reqwest::Url::parse(url).map_err(|e| AppError::BadUrl(e.to_string()))?;
     if parsed.scheme() != "https" {
         return Err(AppError::BadUrl(format!("wymagany https: {url}")));
     }
-    let host = parsed.host_str().ok_or_else(|| AppError::BadUrl(url.to_string()))?;
-    if ALLOWED_HOSTS.iter().any(|allowed| host.eq_ignore_ascii_case(allowed)) {
+    let host = parsed
+        .host_str()
+        .ok_or_else(|| AppError::BadUrl(url.to_string()))?;
+    if is_allowed_host(host) {
         Ok(parsed.to_string())
     } else {
         Err(AppError::BadHost(host.to_string()))
@@ -82,7 +91,10 @@ pub fn check_dest_path(base: &Path, dest: &str) -> Result<PathBuf, AppError> {
     } else {
         base.join(path)
     };
-    if joined.components().any(|c| matches!(c, Component::ParentDir)) {
+    if joined
+        .components()
+        .any(|c| matches!(c, Component::ParentDir))
+    {
         return Err(AppError::BadPath(format!("`..` niedozwolone: {dest}")));
     }
     Ok(joined)
@@ -100,16 +112,20 @@ pub async fn fetch_json(
     if !status.is_success() {
         return Err(AppError::Http(format!("HTTP {status} dla {url}")));
     }
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|e| AppError::Http(e.to_string()))?;
-    if bytes.len() > MAX_JSON_BYTES {
-        return Err(AppError::Http(format!(
-            "odpowiedź większa niż {MAX_JSON_BYTES} B"
-        )));
+    // Limit w locie — `bytes()` najpierw zebrałby całą odpowiedź do RAM,
+    // a dopiero potem ją odrzucił (DoS przez złościwy serwer).
+    let mut stream = response.bytes_stream();
+    let mut body: Vec<u8> = Vec::new();
+    while let Some(chunk) = futures_util::StreamExt::next(&mut stream).await {
+        let chunk = chunk.map_err(|e| AppError::Http(e.to_string()))?;
+        if body.len() + chunk.len() > MAX_JSON_BYTES {
+            return Err(AppError::Http(format!(
+                "odpowiedź większa niż {MAX_JSON_BYTES} B"
+            )));
+        }
+        body.extend_from_slice(&chunk);
     }
-    Ok(serde_json::from_slice(&bytes)?)
+    Ok(serde_json::from_slice(&body)?)
 }
 
 /// Lista wersji z `launcher.json` na mirrorze dystrybucji.
@@ -226,5 +242,17 @@ mod tests {
             check_dest_path(base, "/data/app/x.jar").unwrap(),
             base.join("x.jar")
         );
+    }
+
+    /// Regresja: redirect (download.rs) i `check_url` muszą używać tej samej
+    /// allowlisty — inaczej hop redirectu ominąłby walidację URL startowego.
+    #[test]
+    fn allowlista_hostow_exact_match() {
+        assert!(is_allowed_host("cdn.jsdelivr.net"));
+        assert!(is_allowed_host("CDN.JSDELIVR.NET")); // wielkość liter
+        assert!(!is_allowed_host("cdn.jsdelivr.net.evil.com")); // subdomena-widmo
+        assert!(!is_allowed_host("evilcdn.jsdelivr.net"));
+        assert!(!is_allowed_host("jsdelivr.net"));
+        assert!(!is_allowed_host(""));
     }
 }

@@ -17,4 +17,4 @@ Odpowiedź w ciągu 7 dni. Poprawka albo uzasadnione odrzucenie w ciągu 30 dni,
 - `local.properties` i prywatnych adresów z sekretem w query stringu,
 - dumpów kont Minecraft i ciasteczek sesji.
 
-Allowlista pobierania jest w `ALLOWED_HOSTS` w `src-tauri/src/commands.rs`. Nowe hosty dodawaj świadomie: `check_url` puszcza każdy URL zaczynający się od dopisanego prefiksu.
+Allowlista pobierania jest w `ALLOWED_HOSTS` w `src-tauri/src/commands.rs`. Nowe hosty dodawaj świadomie: `is_allowed_host` porównuje dokładnie nazwę hosta (bez prefiksów — subdomeny i „subdomeny-widmo" jak `cdn.jsdelivr.net.evil.com` nie przechodzą), a ten sam warunek stosuje każdy hop redirectu w `download.rs`.

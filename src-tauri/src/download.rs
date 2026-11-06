@@ -37,7 +37,20 @@ impl Downloader {
             .https_only(true)
             .timeout(Duration::from_secs(60))
             .pool_max_idle_per_host(8)
-            .redirect(reqwest::redirect::Policy::limited(10))
+            // Każdy hop redirectu ponownie przez allowlistę hostów —
+            // `check_url` waliduje tylko URL startowy (limit(10) szedłby gdziekolwiek).
+            .redirect(reqwest::redirect::Policy::custom(|attempt| {
+                if attempt
+                    .url()
+                    .host_str()
+                    .map(crate::commands::is_allowed_host)
+                    .unwrap_or(false)
+                {
+                    attempt.follow()
+                } else {
+                    attempt.stop()
+                }
+            }))
             .build()?;
         Ok(Self {
             client,
@@ -72,7 +85,10 @@ impl Downloader {
                 let got = sha512_file(dest).await?;
                 if hash_eq(&got, expected) {
                     let len = tokio::fs::metadata(dest).await?.len();
-                    return Ok(DownloadOutcome { size: len, sha512: got });
+                    return Ok(DownloadOutcome {
+                        size: len,
+                        sha512: got,
+                    });
                 }
             }
         }
@@ -174,7 +190,10 @@ impl Downloader {
                 });
             }
             tokio::fs::rename(part, dest).await?;
-            return Ok(DownloadOutcome { size: written, sha512: got });
+            return Ok(DownloadOutcome {
+                size: written,
+                sha512: got,
+            });
         }
 
         let got = hex::encode(hasher.finalize());
