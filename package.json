@@ -1,27 +1,19 @@
 {
-	"name": "ogulniega-mobile",
-	"version": "1.1.0",
+	"name": "ogulniega-full-launcher",
+	"version": "1.0.0",
 	"private": true,
-	"description": "Nieoficjalna aplikacja mobilna (PWA + APK) dla klienta Ogulniega Minecraft, z backendem Rust/Tauri",
+	"description": "Launcher klienta Ogulniega Minecraft — backend i UI w Rust (Tauri 2), pobieranie z weryfikacją SHA-512",
 	"license": "MIT",
 	"scripts": {
 		"serve": "npx --yes http-server www -p 8080 -c-1",
-		"sync": "cap sync android",
-		"open": "cap open android",
-		"icons": "python3 tools/make-icons.py",
 		"tauri": "tauri",
-		"rust:dev": "tauri dev",
-		"rust:build": "tauri build",
-		"rust:android": "tauri android build --apk",
-		"rust:android-init": "tauri android init"
-	},
-	"dependencies": {
-		"@capacitor/android": "^7.0.0",
-		"@capacitor/core": "^7.0.0",
-		"@tauri-apps/api": "^2.0.0"
+		"dev": "tauri dev",
+		"build": "tauri build",
+		"android": "tauri android build --apk",
+		"android:init": "tauri android init",
+		"check": "node --check www/app.js && cd src-tauri && cargo check --all-targets && cargo test && cargo clippy --all-targets -- -D warnings"
 	},
 	"devDependencies": {
-		"@capacitor/cli": "^7.0.0",
 		"@tauri-apps/cli": "^2.0.0"
 	}
 }
