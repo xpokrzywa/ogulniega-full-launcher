@@ -16,7 +16,7 @@
 		"rust:android-init": "tauri android init"
 	},
 	"dependencies": {
-		"@capacitor/android": "^7.0.0",
+		"@capacitor/android": "^8.6.0",
 		"@capacitor/core": "^7.0.0",
 		"@tauri-apps/api": "^2.0.0"
 	},
