@@ -17,6 +17,19 @@ const state = {
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
+/* Tauri v2 odrzuca błędem komendy — dla wartości nie-stringowych może to być
+   obiekt {kind, message}, nie Error. Czytaj każde z trzech kształtów. */
+function errMsg(error) {
+	if (error == null) return 'nieznany błąd';
+	if (typeof error === 'string') return error;
+	if (typeof error.message === 'string' && error.message) return error.message;
+	try {
+		return JSON.stringify(error);
+	} catch {
+		return String(error);
+	}
+}
+
 function esc(value) {
 	return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
 		'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -189,6 +202,7 @@ async function openVersion(name) {
 			<div class="actions" style="margin-top:12px">
 				<button class="btn primary" id="btn-graj">Graj</button>
 			</div>
+			<p id="graj-status" class="muted small"></p>
 		</div>
 		<div class="card">
 			<h3>Lista modów</h3>
@@ -201,27 +215,91 @@ async function openVersion(name) {
 		</div>
 	`;
 
+	/* Pobranie plików wersji: równolegle (4 równolegle), weryfikacja SHA-512
+	   po stronie Rust, ścieżki względne (backend skleja z katalogiem danych).
+	   Argumenty komend w camelCase — domyślna konwencja Tauri v2. */
 	$('#btn-graj').addEventListener('click', async () => {
-		const version = state.versions.find((v) => v.name === name);
-		if (!version) return;
+		const invoke = TAURI && (TAURI.invoke || (TAURI.tauri && TAURI.tauri.invoke));
+		if (!invoke) {
+			toast('Pobieranie plików działa tylko w APK.');
+			return;
+		}
+		const status = $('#graj-status');
+		const set = (text) => { if (status) status.textContent = text; };
 		try {
-			toast('Startuję instalację wersji…');
+			set('Pobieranie manifestu wersji…');
 			const data = await getJSON(MIRROR + 'client_versions/' + encodeURIComponent(name) + '.json');
 			const mods = Array.isArray(data.mods) ? data.mods : [];
-			const dir = '/data/ogulniega/' + name;
+			const dir = 'ogulniega/' + name;
 			const jobs = [];
-			if (data.java_linux_url) jobs.push(['Java (Linux)', data.java_linux_url, dir + '/java-linux']);
+			if (data.java_linux_url) {
+				jobs.push({ url: data.java_linux_url, dest: dir + '/java-linux.tar.gz', sha: null });
+			}
 			for (const mod of mods) {
-				if (!mod.url && !mod.fallback_url) continue;
-				jobs.push(['mod:' + (mod.name || mod.id), mod.url || mod.fallback_url, dir + '/' + (mod.name || mod.id)]);
+				const url = mod.url || mod.fallback_url;
+				if (!url) continue;
+				jobs.push({
+					url,
+					fallback: mod.fallback_url && mod.fallback_url !== url ? mod.fallback_url : null,
+					dest: dir + '/mods/' + (mod.name || mod.id),
+					sha: mod.sha512 || null
+				});
 			}
-			for (const [label, url, dest] of jobs) {
-				const res = await TAURI.invoke('download_file', { url, dest_path: dest });
-				toast(`${label}: OK — ${res.size} B, sha512 ${String(res.sha512).slice(0, 16)}…`);
+			if (!jobs.length) {
+				set('Manifest nie zawiera plików do pobrania.');
+				return;
 			}
-			toast('Pobieranie zakończone — gotowy do Gry.');
+
+			let done = 0;
+			let failed = 0;
+			let firstError = '';
+			let cursor = 0;
+
+			const fetchOne = async (job) => {
+				try {
+					await invoke('download_file', {
+						url: job.url,
+						destPath: job.dest,
+						expectedSha512: job.sha
+					});
+				} catch (error) {
+					if (job.fallback) {
+						try {
+							await invoke('download_file', {
+								url: job.fallback,
+								destPath: job.dest,
+								expectedSha512: job.sha
+							});
+						} catch (error2) {
+							failed++;
+							if (!firstError) firstError = errMsg(error2);
+						}
+					} else {
+						failed++;
+						if (!firstError) firstError = errMsg(error);
+					}
+				}
+				done++;
+				set(`Pobieranie ${done}/${jobs.length}${failed ? `, błędy: ${failed}` : ''}…`);
+			};
+
+			const worker = async () => {
+				while (cursor < jobs.length) {
+					await fetchOne(jobs[cursor++]);
+				}
+			};
+			const lanes = Math.min(4, jobs.length);
+			await Promise.all(Array.from({ length: lanes }, () => worker()));
+
+			if (failed) {
+				set(`Zakończone: ${done - failed}/${jobs.length}. Pierwszy błąd: ${firstError}`);
+				toast(`Pobieranie: ${failed} błędów`);
+			} else {
+				set(`Gotowe: ${jobs.length} plików, wszystkie zweryfikowane SHA-512.`);
+				toast('Pobieranie zakończone — pliki gotowe.');
+			}
 		} catch (error) {
-			toast('BŁĄD instalacji: ' + (error.message || error));
+			set('Błąd: ' + errMsg(error));
 		}
 	});
 }
