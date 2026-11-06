@@ -3,7 +3,7 @@
 Nieoficjalny launcher Minecraft (Java / Fabric) w Rust i Tauri 2: lista wersji z lustra Ogulniegi, przycisk Graj, pobieranie klienta JVM i modów z weryfikacją SHA-512.
 
 [![Rust / Tauri](https://github.com/xpokrzywa/ogulniega-full-launcher/actions/workflows/tauri.yml/badge.svg)](https://github.com/xpokrzywa/ogulniega-full-launcher/actions/workflows/tauri.yml)
-[![Android APK](https://github.com/xpokrzywa/ogulniega-full-launcher/actions/workflows/android.yml/badge.svg)](https://github.com/xpokrzywa/ogulniega-full-launcher/actions/workflows/android.yml)
+[![Release](https://github.com/xpokrzywa/ogulniega-full-launcher/actions/workflows/release.yml/badge.svg)](https://github.com/xpokrzywa/ogulniega-full-launcher/actions/workflows/release.yml)
 [![Strona (GitHub Pages)](https://github.com/xpokrzywa/ogulniega-full-launcher/actions/workflows/pages.yml/badge.svg)](https://github.com/xpokrzywa/ogulniega-full-launcher/actions/workflows/pages.yml)
 
 Faktyczne uruchomienie gry na Androidzie zapewnia zewnętrzny silnik (PojavLauncher i podobne). Ten projekt dostarcza backend pobierania i instalacji w Rust.
@@ -49,7 +49,7 @@ npx tauri android build --apk --debug
 ├── src-tauri/src/        commands.rs i lib
 ├── tools/                m.in. tools/make-icons.py
 ├── resources/            zasoby aplikacji
-└── .github/workflows/    tauri.yml, android.yml, pages.yml, release.yml
+└── .github/workflows/    tauri.yml, pages.yml, release.yml
 ```
 
 Katalog `src-tauri/gen/` generuje `npx tauri android init` i nie jest w gicie (patrz `.gitignore`).
