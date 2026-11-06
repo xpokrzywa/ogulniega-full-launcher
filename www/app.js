@@ -57,8 +57,8 @@ async function getJSON(url) {
 	if (TAURI) {
 		const invoke = TAURI.invoke || (TAURI.tauri && TAURI.tauri.invoke);
 		if (invoke) {
-			const body = await invoke('fetch_json', { url });
-			return JSON.parse(body);
+			const res = await invoke('fetch_json', { url });
+			return typeof res === 'string' ? JSON.parse(res) : res;
 		}
 	}
 	const res = await fetch(url, { cache: 'no-cache' });
