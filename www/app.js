@@ -34,6 +34,13 @@ function esc(value) {
 	}[ch]));
 }
 
+/* esc() nie blokuje schematu URL — `javascript:alert(1)` przechodzi bez
+   cudzysłowów. Do href trafia wyłącznie https (reszta → '#'). */
+function safeUrl(value) {
+	const url = String(value ?? '').trim();
+	return /^https:\/\/[^\s]+$/i.test(url) ? url : '#';
+}
+
 function toast(message) {
 	const el = $('#toast');
 	el.textContent = message;
@@ -187,8 +194,8 @@ async function openVersion(name) {
 
 	const mods = Array.isArray(data.mods) ? data.mods : [];
 	const links = [
-		data.java_url ? `<a class="btn small" href="${esc(data.java_url)}" target="_blank" rel="noopener">Java Windows</a>` : '',
-		data.java_linux_url ? `<a class="btn small" href="${esc(data.java_linux_url)}" target="_blank" rel="noopener">Java Linux</a>` : ''
+		data.java_url ? `<a class="btn small" href="${esc(safeUrl(data.java_url))}" target="_blank" rel="noopener noreferrer">Java Windows</a>` : '',
+		data.java_linux_url ? `<a class="btn small" href="${esc(safeUrl(data.java_linux_url))}" target="_blank" rel="noopener noreferrer">Java Linux</a>` : ''
 	].filter(Boolean).join(' ');
 
 	$('#sheet-mods').innerHTML = `
@@ -206,7 +213,7 @@ async function openVersion(name) {
 			<ul class="mods-mini">
 				${mods.slice(0, 80).map((mod) => `
 					<li><span>${esc(mod.name || mod.id)}</span>
-					<a href="${esc(mod.url || mod.fallback_url || '#')}" target="_blank" rel="noopener">pobierz</a></li>`).join('')}
+					<a href="${esc(safeUrl(mod.url || mod.fallback_url))}" target="_blank" rel="noopener noreferrer">pobierz</a></li>`).join('')}
 			</ul>
 			${mods.length > 80 ? `<p class="muted small">…i ${mods.length - 80} więcej</p>` : ''}
 		</div>
