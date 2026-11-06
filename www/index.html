@@ -4,13 +4,10 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 	<meta name="theme-color" content="#0b0f0c" />
-	<meta name="description" content="Nieoficjalna aplikacja mobilna dla klienta Ogulniega Minecraft: wersje klienta, lista modów, wyszukiwarka Modrinth." />
+	<meta name="description" content="Ogulniega Full Launcher — klient Ogulniega na Androidzie: wersje i mody z weryfikacją SHA-512." />
 	<title>Ogulniega Full Launcher</title>
-	<link rel="manifest" href="./manifest.webmanifest" />
 	<link rel="icon" href="./icons/icon-192.png" sizes="192x192" />
-	<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
 	<link rel="stylesheet" href="./style.css" />
-	<link rel="preload" href="./fonts/PressStart2P-Regular.ttf" as="font" type="font/ttf" crossorigin />
 </head>
 <body>
 	<header class="topbar">
@@ -21,7 +18,6 @@
 				<p id="version-line">wersja aplikacji 1.0.0</p>
 			</div>
 		</div>
-		<button id="install-btn" class="ghost" hidden>Zainstaluj</button>
 	</header>
 
 	<main>
@@ -29,13 +25,9 @@
 			<div class="hero">
 				<img class="hero-block" src="./icons/icon-192.png" alt="" width="72" height="72" />
 				<h2>Klient Ogulniega na telefonie</h2>
-				<p>Przeglądaj wersje klienta, mody i serwery bezpośrednio ze źródła projektu.
-					Aplikacja niczego nie uruchamia — do grania w Minecraft Java na Androidzie
-					potrzebujesz launchera z JVM (patrz zakładka Pomoc).</p>
-				<div class="actions">
-					<a class="btn primary" href="https://ogulniega.com/en" target="_blank" rel="noopener">Strona projektu</a>
-					<a class="btn" href="https://ogulniega.com/files/launcher.json" target="_blank" rel="noopener">launcher.json</a>
-				</div>
+				<p>Przeglądaj wersje klienta i pobieraj pliki prosto ze źródła projektu.
+					Pobrania są weryfikowane sumą SHA-512. Do grania w Minecraft Java
+					na Androidzie potrzebny jest launcher z JVM (patrz zakładka Pomoc).</p>
 			</div>
 
 			<div class="grid">
@@ -74,28 +66,14 @@
 			<div id="versions-list" class="list"><p class="muted">wczytywanie…</p></div>
 		</section>
 
-		<section id="tab-mods" class="tab">
-			<div class="toolbar">
-				<input id="mod-query" type="search" placeholder="Szukaj moda na Modrinth…" autocomplete="off" />
-				<select id="mod-version" aria-label="Wersja Minecrafta"><option value="">dowolna wersja</option></select>
-			</div>
-			<div id="mods-list" class="list">
-				<p class="muted">Wpisz nazwę moda, np. „sodium”, „lithium”, „journeymap”.</p>
-			</div>
-		</section>
-
 		<section id="tab-help" class="tab">
 			<article class="card">
 				<h3>Jak zainstalować tę aplikację</h3>
 				<ol>
-					<li><b>Jako PWA (najprościej):</b> otwórz adres projektu na GitHub Pages w Chrome,
-						menu ⋮ → „Dodaj do ekranu głównego”. Aplikacja działa też offline.</li>
-					<li><b>Jako APK:</b> w repozytorium na GitHubie wejdź w zakładkę <i>Actions</i>,
-						wybierz workflow <i>Android APK</i>, pobierz artefakt <code>ogulniega-mobile-debug-apk</code>,
-						rozpakuj i zainstaluj plik <code>.apk</code> (trzeba zezwolić na instalację z nieznanych źródeł).</li>
-					<li><b>Jako APK ze Rustem (backend pobierania w Rust):</b> w Actions wybierz
-						workflow <i>Rust / Tauri</i>, artefakt <code>ogulniega-mobile-rust-apk</code>,
-						rozpakuj i zainstaluj <code>app-debug.apk</code> z folderu <code>gen/android</code>.</li>
+					<li><b>Jako APK:</b> wejdź w zakładkę <i>Releases</i> repozytorium na GitHubie,
+						pobierz <code>.apk</code> z ostatniego wydania i zainstaluj
+						(trzeba zezwolić na instalację z nieznanych źródeł).</li>
+					<li><b>Jako strona:</b> otwórz adres projektu na GitHub Pages w przeglądarce.</li>
 				</ol>
 			</article>
 			<article class="card">
@@ -112,7 +90,6 @@
 			<article class="card">
 				<h3>Wersja aplikacji</h3>
 				<p id="backend-line" class="muted small">Sprawdzam tryb pracy…</p>
-				<p id="version-line" class="muted small">wersja aplikacji 1.1.0</p>
 			</article>
 			<article class="card">
 				<h3>Ważne</h3>
@@ -129,7 +106,6 @@
 	<nav class="tabbar" aria-label="Nawigacja">
 		<button class="tabbtn active" data-tab="start"><span>◇</span>Start</button>
 		<button class="tabbtn" data-tab="versions"><span>▤</span>Wersje</button>
-		<button class="tabbtn" data-tab="mods"><span>✦</span>Mody</button>
 		<button class="tabbtn" data-tab="help"><span>?</span>Pomoc</button>
 	</nav>
 

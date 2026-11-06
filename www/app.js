@@ -1,17 +1,15 @@
 /* Ogulniega Mobile — logika aplikacji (bez frameworków, bez buildu) */
 'use strict';
 
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.0.0';
 const MIRROR = 'https://cdn.jsdelivr.net/gh/xMelonekMaX/ogulniega-distribution@main/';
-const MODRINTH = 'https://api.modrinth.com/v2';
 
 const state = {
 	launcher: null,
 	latest: null,
 	versions: [],
 	filter: '',
-	clientCache: new Map(),
-	modrinthToken: 0
+	clientCache: new Map()
 };
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -107,7 +105,6 @@ async function loadData() {
 
 	renderStart();
 	renderVersions();
-	fillModVersions();
 	$('#last-updated').textContent = 'odświeżono: ' + new Date().toLocaleString('pl-PL');
 }
 
@@ -304,102 +301,6 @@ async function openVersion(name) {
 	});
 }
 
-/* ---------- Modrinth ---------- */
-
-function fillModVersions() {
-	const select = $('#mod-version');
-	const versions = [...new Set(state.versions.map((v) => v.minecraft_version).filter(Boolean))]
-		.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
-	select.innerHTML = ['<option value="">dowolna wersja</option>']
-		.concat(versions.map((v) => `<option value="${esc(v)}">${esc(v)}</option>`)).join('');
-}
-
-async function searchMods(query) {
-	const token = ++state.modrinthToken;
-	const list = $('#mods-list');
-	const version = $('#mod-version').value;
-
-	if (!query.trim()) {
-		list.innerHTML = '<p class="muted">Wpisz nazwę moda, np. „sodium”, „lithium”, „journeymap”.</p>';
-		return;
-	}
-
-	const facets = [['project_type:mod'], ['categories:fabric']];
-	if (version) facets.push([`versions:${version}`]);
-	const params = new URLSearchParams({
-		query: query.trim(),
-		facets: JSON.stringify(facets),
-		limit: '12',
-		index: 'relevance'
-	});
-
-	list.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
-
-	let data;
-	try {
-		data = await getJSON(`${MODRINTH}/search?${params.toString()}`);
-	} catch (error) {
-		if (token === state.modrinthToken) {
-			list.innerHTML = `<p class="error">Modrinth nie odpowiedział (${esc(error.message)}).</p>`;
-		}
-		return;
-	}
-	if (token !== state.modrinthToken) return;
-
-	if (!data.hits || !data.hits.length) {
-		list.innerHTML = '<p class="muted">Brak wyników — spróbuj innej nazwy lub innej wersji Minecrafta.</p>';
-		return;
-	}
-
-	list.innerHTML = data.hits.map((hit) => `
-		<article class="mod-card">
-			<img src="${esc(hit.icon_url || './icons/icon-192.png')}" alt="" loading="lazy" />
-			<div class="row-main">
-				<div class="row-title">${esc(hit.title)}</div>
-				<div class="row-sub">${esc(hit.description || '')}</div>
-				<div class="row-sub">↓ ${esc(Number(hit.downloads || 0).toLocaleString('pl-PL'))} • ${esc(hit.client_side || '')}</div>
-				<div class="mod-actions">
-					<a class="btn small" href="https://modrinth.com/mod/${esc(hit.slug)}" target="_blank" rel="noopener">Strona moda</a>
-					<button class="btn small" data-file="${esc(hit.project_id)}" data-title="${esc(hit.title)}">Plik dla wersji</button>
-				</div>
-			</div>
-		</article>`).join('');
-
-	$$('[data-file]', list).forEach((btn) => btn.addEventListener('click', () => {
-		openModFile(btn.dataset.file, btn.dataset.title);
-	}));
-}
-
-async function openModFile(projectId, title) {
-	const version = $('#mod-version').value;
-	const params = new URLSearchParams({ loaders: '["fabric"]' });
-	if (version) params.set('game_versions', `["${version}"]`);
-
-	toast('Szukam pliku…');
-	let files;
-	try {
-		files = await getJSON(`${MODRINTH}/project/${encodeURIComponent(projectId)}/version?${params.toString()}`);
-	} catch (error) {
-		toast('Błąd Modrinth: ' + error.message);
-		return;
-	}
-
-	if (!Array.isArray(files) || !files.length) {
-		openSheet(`<h2>${esc(title)}</h2><p class="muted">Brak plików Fabric${version ? ' dla Minecrafta ' + esc(version) : ''}.</p>`);
-		return;
-	}
-
-	const latest = files[0];
-	const primary = (latest.files || []).find((file) => file.primary) || (latest.files || [])[0] || {};
-	openSheet(`
-		<h2>${esc(title)}</h2>
-		<p class="muted">Wersja moda: ${esc(latest.version_number || '?')} • Minecraft ${esc((latest.game_versions || []).slice(-3).join(', '))}</p>
-		${primary.url ? `<a class="btn primary" href="${esc(primary.url)}" target="_blank" rel="noopener">Pobierz ${esc(primary.filename || 'plik')}</a>` : '<p class="muted">Brak pliku do pobrania.</p>'}
-		<p class="muted small" style="margin-top:14px">Plik .jar wrzuć do folderu mods swojego launchera na Androidzie (np. PojavLauncher) —
-			wtedy zadziała. Ta aplikacja tylko podaje link.</p>
-	`);
-}
-
 /* ---------- arkusz dolny ---------- */
 
 function openSheet(html) {
@@ -410,35 +311,6 @@ function openSheet(html) {
 function closeSheet() {
 	$('#sheet').hidden = true;
 	$('#sheet-body').innerHTML = '';
-}
-
-/* ---------- PWA ---------- */
-
-let deferredPrompt = null;
-
-function setupInstall() {
-	window.addEventListener('beforeinstallprompt', (event) => {
-		event.preventDefault();
-		deferredPrompt = event;
-		$('#install-btn').hidden = false;
-	});
-
-	$('#install-btn').addEventListener('click', async () => {
-		if (!deferredPrompt) {
-			toast('Użyj menu Chrome ⋮ → „Dodaj do ekranu głównego”.');
-			return;
-		}
-		deferredPrompt.prompt();
-		await deferredPrompt.userChoice;
-		deferredPrompt = null;
-		$('#install-btn').hidden = true;
-	});
-}
-
-function setupServiceWorker() {
-	if (!('serviceWorker' in navigator)) return;
-	if (location.protocol === 'file:') return;
-	navigator.serviceWorker.register('./sw.js').catch(() => { /* offline i tak zadziała po drugim wejściu */ });
 }
 
 /* ---------- start ---------- */
@@ -470,18 +342,6 @@ function init() {
 		renderVersions();
 	});
 
-	let modTimer;
-	$('#mod-query').addEventListener('input', (event) => {
-		clearTimeout(modTimer);
-		const value = event.target.value;
-		modTimer = setTimeout(() => searchMods(value), 350);
-	});
-	$('#mod-version').addEventListener('change', () => {
-		if ($('#mod-query').value.trim()) searchMods($('#mod-query').value);
-	});
-
-	setupInstall();
-	setupServiceWorker();
 	loadData();
 
 	window.addEventListener('online', loadData);
