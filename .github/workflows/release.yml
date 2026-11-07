@@ -39,7 +39,7 @@ jobs:
         run: npx tauri build --bundles deb,appimage
 
       - name: Artefakt desktop
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ogulniega-mobile-linux
           path: |
@@ -114,7 +114,7 @@ jobs:
           ls -lh ogulniega-full-launcher.apk
 
       - name: Artefakt APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ogulniega-mobile-rust-apk
           path: ogulniega-full-launcher.apk
