@@ -188,7 +188,7 @@ async function openVersion(name) {
 		}
 		data = state.clientCache.get(name);
 	} catch (error) {
-		$('#sheet-mods').innerHTML = `<p class="error">Nie udało się pobrać listy plików tej wersji (${esc(error.message)}).</p>`;
+		$('#sheet-mods').innerHTML = `<p class="error">Nie udało się pobrać listy plików tej wersji (${esc(errMsg(error))}).</p>`;
 		return;
 	}
 

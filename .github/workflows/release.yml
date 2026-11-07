@@ -87,16 +87,37 @@ jobs:
       - name: Inicjalizacja projektu Android
         run: npx tauri android init --ci
 
+      # `tauri android build` bez flagi buduje profil release (flaga to `--debug`).
       - name: Budowa APK (release)
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
-        run: npx tauri android build --apk --release
+        run: npx tauri android build --apk
+
+      # Gradle daje `app-universal-release-unsigned.apk`; bez podpisu nie da się
+      # tego zainstalować na telefonie. Podpisujemy stałym kluczem z repo,
+      # żeby kolejne wersje dały się instalować nakładkowo.
+      - name: Podpisanie APK
+        run: |
+          set -euo pipefail
+          UNSIGNED=$(find src-tauri/gen/android/app/build/outputs/apk -name '*release*.apk' | head -n 1)
+          echo "Niezpodpisany APK: $UNSIGNED"
+          BT="$ANDROID_HOME/build-tools/35.0.0"
+          "$BT/zipalign" -f -p 4 "$UNSIGNED" launcher-aligned.apk
+          "$BT/apksigner" sign \
+            --ks src-tauri/android-release.jks \
+            --ks-key-alias ogulniega \
+            --ks-pass pass:ogulniega \
+            --key-pass pass:ogulniega \
+            --out ogulniega-full-launcher.apk \
+            launcher-aligned.apk
+          "$BT/apksigner" verify --print-certs ogulniega-full-launcher.apk
+          ls -lh ogulniega-full-launcher.apk
 
       - name: Artefakt APK
         uses: actions/upload-artifact@v4
         with:
           name: ogulniega-mobile-rust-apk
-          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          path: ogulniega-full-launcher.apk
           if-no-files-found: error
 
   release:
