@@ -31,6 +31,8 @@ pub const ALLOWED_HOSTS: &[&str] = &[
     "edge.forgecdn.net",
     "github.com",
     "objects.githubusercontent.com",
+    "release-assets.githubusercontent.com",
+    "github-releases.githubusercontent.com",
     "raw.githubusercontent.com",
 ];
 
