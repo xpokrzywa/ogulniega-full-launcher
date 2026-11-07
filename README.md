@@ -37,8 +37,14 @@ npx tauri android build --apk
 
 ```bash
 npx tauri android init --ci   # raz, generuje gen/android (nie jest w gicie)
-npx tauri android build --apk --debug
+npx tauri android build --apk # domyślnie profil release; debug tylko z --debug
 ```
+
+Gradle zwraca `app-universal-release-unsigned.apk`, więc workflow podpisuje go
+stałym kluczem `src-tauri/android-release.jks` (alias `ogulniega`, hasło
+`ogulniega` — to klucz hobby, nie do sklepu Play) i publikuje jako
+`ogulniega-full-launcher.apk`. Bez stałego klucza kolejne wersje nie dałyby się
+zainstalować nakładkowo.
 
 ## Struktura projektu
 

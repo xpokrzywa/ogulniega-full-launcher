@@ -53,13 +53,18 @@ function toast(message) {
    W przeglądarce zostaje zwykły fetch. */
 const TAURI = globalThis.__TAURI_INTERNALS__ || globalThis.__TAURI__;
 
+/* Tauri v2 trzyma `invoke` w `__TAURI_INTERNALS__`, a z `withGlobalTauri`
+   w `__TAURI__.tauri.invoke` — jedno miejsce, żeby nie zgadywać w każdym callu. */
+function getInvoke() {
+	if (!TAURI) return null;
+	return TAURI.invoke || (TAURI.tauri && TAURI.tauri.invoke) || null;
+}
+
 async function getJSON(url) {
-	if (TAURI) {
-		const invoke = TAURI.invoke || (TAURI.tauri && TAURI.tauri.invoke);
-		if (invoke) {
-			const res = await invoke('fetch_json', { url });
-			return typeof res === 'string' ? JSON.parse(res) : res;
-		}
+	const invoke = getInvoke();
+	if (invoke) {
+		const res = await invoke('fetch_json', { url });
+		return typeof res === 'string' ? JSON.parse(res) : res;
 	}
 	const res = await fetch(url, { cache: 'no-cache' });
 	if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -70,12 +75,13 @@ async function getJSON(url) {
 async function describeBackend() {
 	const el = $('#backend-line');
 	if (!el) return;
-	if (!TAURI) {
+	const invoke = getInvoke();
+	if (!invoke) {
 		el.textContent = 'Tryb: PWA (przeglądarka) — dane pobiera JavaScript.';
 		return;
 	}
 	try {
-		const info = await TAURI.invoke('backend_info');
+		const info = await invoke('backend_info');
 		el.textContent = `Tryb: ${info.backend} • wersja ${info.appVersion} • ${info.platform}/${info.arch}`;
 	} catch (err) {
 		el.textContent = 'Tryb: Tauri (back-end niedostępny)';
@@ -223,7 +229,7 @@ async function openVersion(name) {
 	   po stronie Rust, ścieżki względne (backend skleja z katalogiem danych).
 	   Argumenty komend w camelCase — domyślna konwencja Tauri v2. */
 	$('#btn-graj').addEventListener('click', async () => {
-		const invoke = TAURI && (TAURI.invoke || (TAURI.tauri && TAURI.tauri.invoke));
+		const invoke = getInvoke();
 		if (!invoke) {
 			toast('Pobieranie plików działa tylko w APK.');
 			return;
