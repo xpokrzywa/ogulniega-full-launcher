@@ -50,7 +50,7 @@ jobs:
         run: npx tauri build --bundles deb,appimage
 
       - name: Artefakt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ogulniega-mobile-linux
           path: |
@@ -104,7 +104,7 @@ jobs:
         run: npx tauri android build --apk --debug
 
       - name: Artefakt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ogulniega-mobile-rust-apk
           path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
